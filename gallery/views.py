@@ -198,17 +198,22 @@ def delete_post(request, post_id):
     })
 
 @login_required
-def delete_photo(request, photo_id):
-    photo = get_object_or_404(Photo, pk=photo_id)
-    if request.user != photo.post.user:
+def delete_photo(request, post_id, photo_id):
+    post = get_object_or_404(Post, pk=post_id)
+    photo = get_object_or_404(Photo, pk=photo_id, post=post)
+    
+    if request.user != post.user:
         messages.error(request, "You don't have permission to delete this photo.")
-        return redirect('gallery:album_detail', pk=photo.post.album.pk)
+        return redirect('gallery:album_detail', pk=post.album.pk)
     
     if request.method == 'POST':
-        post_pk = photo.post.pk
+        album_pk = post.album.pk
         photo.delete()
         messages.success(request, "Photo deleted successfully.")
-        return redirect('gallery:post_detail', post_id=post_pk)
+        # If post has no more photos, redirect to album detail
+        if not post.photos.exists():
+            return redirect('gallery:album_detail', pk=album_pk)
+        return redirect('gallery:post_detail', post_id=post_id)
     
     return render(request, 'gallery/confirm_delete.html', {
         'object': photo,
@@ -236,4 +241,7 @@ def delete_comment(request, comment_id):
 @login_required
 def post_detail(request, post_id):
     post = get_object_or_404(Post, pk=post_id)
-    return render(request, 'gallery/post_detail.html', {'post': post})
+    return render(request, 'gallery/post_detail.html', {
+        'post': post,
+        'album': post.album
+    })

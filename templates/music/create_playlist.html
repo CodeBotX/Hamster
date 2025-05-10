@@ -6,15 +6,47 @@
 <div class="row">
     <div class="col-md-8">
         <h2>Create New Playlist</h2>
-        <form method="post">
+        {% if form.errors %}
+        <div class="alert alert-danger">
+            <ul>
+                {% for field, errors in form.errors.items %}
+                    {% for error in errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+        <form method="post" enctype="multipart/form-data">
             {% csrf_token %}
             <div class="mb-3">
                 <label for="id_name" class="form-label">Playlist Name</label>
                 {{ form.name }}
+                {% if form.name.errors %}
+                <div class="text-danger">{{ form.name.errors }}</div>
+                {% endif %}
             </div>
             <div class="mb-3">
                 <label for="id_description" class="form-label">Description</label>
                 {{ form.description }}
+                {% if form.description.errors %}
+                <div class="text-danger">{{ form.description.errors }}</div>
+                {% endif %}
+            </div>
+            <div class="mb-3">
+                <label for="id_cover_image" class="form-label">Cover Image</label>
+                {{ form.cover_image }}
+                {% if form.cover_image.errors %}
+                <div class="text-danger">{{ form.cover_image.errors }}</div>
+                {% endif %}
+            </div>
+            <div class="mb-3">
+                <div class="form-check">
+                    {{ form.is_public }}
+                    <label class="form-check-label" for="id_is_public">
+                        Make this playlist public
+                    </label>
+                </div>
             </div>
             <div class="mb-3">
                 <label class="form-label">Songs</label>
@@ -30,6 +62,9 @@
                     </div>
                     {% endfor %}
                 </div>
+                {% if form.songs.errors %}
+                <div class="text-danger">{{ form.songs.errors }}</div>
+                {% endif %}
             </div>
             <button type="submit" class="btn btn-primary">Create Playlist</button>
             <a href="{% url 'music:index' %}" class="btn btn-secondary">Cancel</a>

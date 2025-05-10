@@ -21,5 +21,7 @@ urlpatterns = [
     path('posts/<int:post_id>/comment/', views.add_comment, name='add_comment'),
     path('posts/<int:post_id>/reorder/', views.reorder_photos, name='reorder_photos'),
     path('comments/<int:comment_id>/delete/', views.delete_comment, name='delete_comment'),
-    path('photos/<int:photo_id>/delete/', views.delete_photo, name='delete_photo'),
+    
+    # Photo management
+    path('posts/<int:post_id>/photos/<int:photo_id>/delete/', views.delete_photo, name='delete_photo'),
 ] 

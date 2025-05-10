@@ -60,7 +60,7 @@
                             <img src="{{ photo.image.url }}" alt="{{ post.title }}" class="img-fluid" 
                                  data-bs-toggle="modal" data-bs-target="#photoModal{{ photo.id }}">
                             {% if post.user == request.user %}
-                            <a href="{% url 'gallery:delete_photo' photo.pk %}" class="btn btn-danger btn-sm position-absolute top-0 end-0 m-2">
+                            <a href="{% url 'gallery:delete_photo' post.pk photo.pk %}" class="btn btn-danger btn-sm position-absolute top-0 end-0 m-2">
                                 <i class="fas fa-times"></i>
                             </a>
                             {% endif %}
