@@ -344,30 +344,45 @@ body {
 
 .tonearm {
     position: absolute;
-    width: 30vw;
-    max-width: 100px;
-    height: 8px;
-    background: #ccc;
-    top: 14vw;
-    max-top: 60px;
-    right: -30px;
+    width: 45vw;
+    max-width: 160px;
+    height: 6px;
+    background: linear-gradient(to right, #aaa, #ccc);
+    top: 12vw;
+    max-top: 50px;
+    left: -45px;
     transform-origin: left center;
-    transform: rotate(0deg);
-    transition: transform 0.8s ease-in-out;
-    border-radius: 6px;
+    transform: rotate(-20deg);
+    transition: transform 0.8s cubic-bezier(.4,2,.6,1);
+    border-radius: 3px;
     box-shadow: 2px 2px 8px rgba(0,0,0,0.5);
     z-index: 1;
 }
-.tonearm::after {
+
+.tonearm::before {
     content: "";
     position: absolute;
     right: 0;
-    top: -3px;
-    width: 12px;
-    height: 12px;
+    top: -2px;
+    width: 10px;
+    height: 10px;
     background: #222;
     border: 2px solid #aaa;
     border-radius: 50%;
+    box-shadow: 0 0 4px rgba(0,0,0,0.5);
+}
+
+.tonearm::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: -4px;
+    width: 16px;
+    height: 16px;
+    background: #444;
+    border: 2px solid #888;
+    border-radius: 50%;
+    box-shadow: 0 0 6px rgba(0,0,0,0.6);
 }
 
 .retro-card.playing .tonearm {
@@ -404,7 +419,7 @@ body {
     .retro-vinyl { width: 260px; height: 260px; }
     .retro-cover-img { width: 110px; height: 110px; }
     .retro-center-hole { width: 14px; height: 14px; }
-    .tonearm { width: 100px; top: 60px; }
+    .tonearm { width: 160px; top: 50px; left: -45px; }
     .retro-play-btn { width: 60px; height: 60px; font-size: 1.5rem; }
     .song-title { font-size: 1.3rem; }
     .song-artist { font-size: 1.1rem; }
