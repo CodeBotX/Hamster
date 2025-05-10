@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+
+{% block title %}Home - Hamster Media{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8 text-center">
+            <h1 class="display-4 mb-5">Welcome to Hamster Media</h1>
+            
+            <div class="row g-4">
+                <div class="col-md-4">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <i class="fas fa-music fa-3x mb-3 text-primary"></i>
+                            <h3 class="card-title">Music</h3>
+                            <p class="card-text">Listen to your favorite songs and create playlists</p>
+                            <a href="{% url 'music:index' %}" class="btn btn-primary">Go to Music</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-4">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <i class="fas fa-images fa-3x mb-3 text-success"></i>
+                            <h3 class="card-title">Photos</h3>
+                            <p class="card-text">View and manage your photo albums</p>
+                            <a href="{% url 'gallery:album_list' %}" class="btn btn-success">Go to Photos</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

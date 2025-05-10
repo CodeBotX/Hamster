@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+
+{% block title %}Create Playlist - Hamster Media{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <h2>Create New Playlist</h2>
+        <form method="post">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label for="id_name" class="form-label">Playlist Name</label>
+                {{ form.name }}
+            </div>
+            <div class="mb-3">
+                <label for="id_description" class="form-label">Description</label>
+                {{ form.description }}
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Songs</label>
+                <div class="list-group">
+                    {% for song in form.songs %}
+                    <div class="list-group-item">
+                        <div class="form-check">
+                            {{ song.tag }}
+                            <label class="form-check-label" for="{{ song.id_for_label }}">
+                                {{ song.choice_label }}
+                            </label>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary">Create Playlist</button>
+            <a href="{% url 'music:index' %}" class="btn btn-secondary">Cancel</a>
+        </form>
+    </div>
+</div>
+{% endblock %} 

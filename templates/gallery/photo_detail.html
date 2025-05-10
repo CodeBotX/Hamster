@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ photo.title }} - Hamster Media{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body">
+                <h2 class="card-title">{{ photo.title }}</h2>
+                <p class="card-text">{{ photo.description }}</p>
+                
+                <div class="text-center mb-4">
+                    <img src="{{ photo.image.url }}" class="img-fluid" alt="{{ photo.title }}">
+                </div>
+                
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong>Album:</strong> {{ photo.album.name }}<br>
+                        <strong>Uploaded:</strong> {{ photo.created_at|date:"F j, Y" }}
+                    </div>
+                    <a href="{% url 'gallery:album_detail' photo.album.pk %}" class="btn btn-outline-primary">
+                        Back to Album
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

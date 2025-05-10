@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+
+{% block title %}Albums - Hamster Media{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h2>Photo Albums</h2>
+        <div class="d-flex justify-content-between mb-3">
+            <a href="{% url 'gallery:create_album' %}" class="btn btn-primary">Create New Album</a>
+        </div>
+
+        <div class="row">
+            {% for album in albums %}
+            <div class="col-md-4 mb-4">
+                <div class="card">
+                    {% if album.cover_photo %}
+                    <img src="{{ album.cover_photo.url }}" class="card-img-top" alt="{{ album.name }}">
+                    {% else %}
+                    <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+                        <span class="text-muted">No cover photo</span>
+                    </div>
+                    {% endif %}
+                    <div class="card-body">
+                        <h5 class="card-title">{{ album.name }}</h5>
+                        <p class="card-text">{{ album.description|truncatechars:100 }}</p>
+                        <a href="{% url 'gallery:album_detail' album.pk %}" class="btn btn-outline-primary">View Album</a>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-12">
+                <div class="alert alert-info">No albums available.</div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %} 

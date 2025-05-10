@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Hamster Media{% endblock %}</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <style>
+        :root {
+            --nav-color: {{ request.user.theme.nav_color|default:'#1a73e8' }};
+            --bg-color: {{ request.user.theme.bg_color|default:'#ffffff' }};
+        }
+        body {
+            background-color: var(--bg-color);
+            min-height: 100vh;
+        }
+        .navbar {
+            background-color: var(--nav-color) !important;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1030;
+        }
+        .main-content {
+            margin-top: 56px;
+            min-height: calc(100vh - 56px);
+        }
+        .btn-link.nav-link {
+            color: rgba(255, 255, 255, 0.85) !important;
+        }
+        .btn-link.nav-link:hover {
+            color: rgba(255, 255, 255, 1) !important;
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container">
+            <a class="navbar-brand" href="{% url 'gallery:home' %}">Hamster Media</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    {% if user.is_authenticated %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'gallery:album_list' %}">
+                                <i class="fas fa-images"></i> Photos
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'music:index' %}">
+                                <i class="fas fa-music"></i> Music
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+                <ul class="navbar-nav">
+                    {% if user.is_authenticated %}
+                        <li class="nav-item">
+                            <span class="nav-link">Welcome, {{ user.username }}</span>
+                        </li>
+                        <li class="nav-item">
+                            <button class="btn btn-link nav-link" data-bs-toggle="modal" data-bs-target="#themeModal">
+                                <i class="fas fa-palette"></i> Theme
+                            </button>
+                        </li>
+                        <li class="nav-item">
+                            <form method="post" action="{% url 'users:logout' %}" class="d-inline">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-link nav-link">
+                                    <i class="fas fa-sign-out-alt"></i> Logout
+                                </button>
+                            </form>
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'users:login' %}">
+                                <i class="fas fa-sign-in-alt"></i> Login
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'users:register' %}">
+                                <i class="fas fa-user-plus"></i> Register
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Theme Modal -->
+    <div class="modal fade" id="themeModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Customize Theme</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="themeForm">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="id_nav_color" class="form-label">Navigation Color</label>
+                            <input type="color" class="form-control form-control-color" id="id_nav_color" 
+                                   name="nav_color" value="{{ request.user.theme.nav_color|default:'#1a73e8' }}">
+                        </div>
+                        <div class="mb-3">
+                            <label for="id_bg_color" class="form-label">Background Color</label>
+                            <input type="color" class="form-control form-control-color" id="id_bg_color" 
+                                   name="bg_color" value="{{ request.user.theme.bg_color|default:'#ffffff' }}">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" id="saveTheme">Save Changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="container">
+            {% if messages %}
+            <div class="messages">
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            {% block content %}
+            {% endblock %}
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Theme Script -->
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const saveThemeBtn = document.getElementById('saveTheme');
+        const themeForm = document.getElementById('themeForm');
+        const navColorInput = document.getElementById('id_nav_color');
+        const bgColorInput = document.getElementById('id_bg_color');
+
+        saveThemeBtn.addEventListener('click', function() {
+            const formData = new FormData(themeForm);
+            
+            fetch('{% url "users:update_theme" %}', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    document.documentElement.style.setProperty('--nav-color', data.nav_color);
+                    document.documentElement.style.setProperty('--bg-color', data.bg_color);
+                    bootstrap.Modal.getInstance(document.getElementById('themeModal')).hide();
+                } else {
+                    alert('Error updating theme');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error updating theme');
+            });
+        });
+
+        // Update color preview in real-time
+        navColorInput.addEventListener('input', function() {
+            document.documentElement.style.setProperty('--nav-color', this.value);
+        });
+
+        bgColorInput.addEventListener('input', function() {
+            document.documentElement.style.setProperty('--bg-color', this.value);
+        });
+    });
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html> 

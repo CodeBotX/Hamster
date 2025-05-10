@@ -1,0 +1,156 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ playlist.name }} - Hamster Media{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'music:index' %}">Home</a></li>
+            {% for ancestor in playlist.get_path.split %}
+                <li class="breadcrumb-item active">{{ ancestor }}</li>
+            {% endfor %}
+        </ol>
+    </nav>
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>{{ playlist.name }}</h2>
+        <div class="btn-group">
+            <a href="{% url 'music:create_sub_playlist' playlist.pk %}" class="btn btn-primary">
+                <i class="fas fa-folder-plus"></i> New Folder
+            </a>
+            <a href="{% url 'music:upload_song' playlist.pk %}" class="btn btn-success">
+                <i class="fas fa-upload"></i> Upload Song
+            </a>
+            <button class="btn btn-info" onclick="playAll()">
+                <i class="fas fa-play"></i> Play All
+            </button>
+        </div>
+    </div>
+
+    {% if sub_playlists %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <h3>Folders</h3>
+            <div class="row">
+                {% for sub_playlist in sub_playlists %}
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100">
+                        {% if sub_playlist.cover_image %}
+                            <img src="{{ sub_playlist.cover_image.url }}" class="card-img-top" alt="{{ sub_playlist.name }}" style="height: 150px; object-fit: cover;">
+                        {% else %}
+                            <div class="card-img-top bg-secondary d-flex align-items-center justify-content-center" style="height: 150px;">
+                                <i class="fas fa-folder fa-3x text-white"></i>
+                            </div>
+                        {% endif %}
+                        <div class="card-body">
+                            <h5 class="card-title">{{ sub_playlist.name }}</h5>
+                            <p class="card-text">{{ sub_playlist.description|truncatechars:100 }}</p>
+                            <div class="d-flex justify-content-between">
+                                <a href="{% url 'music:playlist_detail' sub_playlist.pk %}" class="btn btn-outline-primary">
+                                    <i class="fas fa-folder-open"></i> Open
+                                </a>
+                                <div class="btn-group">
+                                    <a href="{% url 'music:playlist_update' sub_playlist.pk %}" class="btn btn-outline-secondary">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="{% url 'music:playlist_delete' sub_playlist.pk %}" class="btn btn-outline-danger">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if songs %}
+    <div class="row">
+        <div class="col-12">
+            <h3>Songs</h3>
+            <div class="list-group">
+                {% for song in songs %}
+                <div class="list-group-item list-group-item-action">
+                    <div class="d-flex align-items-center">
+                        <div class="rounded bg-secondary me-3 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                            <i class="fas fa-music text-white"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <h5 class="mb-1">{{ song.title }}</h5>
+                        </div>
+                        <div class="btn-group ms-3">
+                            <a class="btn btn-outline-primary" href="{% url 'music:play_song' song.pk %}">
+                                <i class="fas fa-play"></i>
+                            </a>
+                            <a href="{% url 'music:song_delete' song.pk %}" class="btn btn-outline-danger">
+                                <i class="fas fa-trash"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if not sub_playlists and not songs %}
+    <div class="alert alert-info">
+        <i class="fas fa-info-circle"></i> This folder is empty. Add some songs or create sub-folders to organize your music.
+    </div>
+    {% endif %}
+</div>
+
+<div id="playerContainer" class="fixed-bottom bg-dark text-white p-3" style="display: none;">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-md-4">
+                <div class="d-flex align-items-center">
+                    <div class="me-3">
+                        <i class="fas fa-music fa-2x"></i>
+                    </div>
+                    <div>
+                        <div id="currentSongTitle" class="fw-bold"></div>
+                        <div id="playlistProgress" class="text-muted small">
+                            Song <span id="currentSongNumber">0</span> of <span id="totalSongs">0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="d-flex flex-column">
+                    <div class="d-flex justify-content-center align-items-center mb-2">
+                        <button class="btn btn-link text-white me-3" onclick="previousSong()">
+                            <i class="fas fa-step-backward"></i>
+                        </button>
+                        <button id="playPauseBtn" class="btn btn-link text-white me-3" onclick="togglePlayPause()">
+                            <i class="fas fa-play fa-2x"></i>
+                        </button>
+                        <button class="btn btn-link text-white" onclick="nextSong()">
+                            <i class="fas fa-step-forward"></i>
+                        </button>
+                    </div>
+                    <div class="d-flex align-items-center">
+                        <span id="currentTime" class="me-2">0:00</span>
+                        <input type="range" class="form-range flex-grow-1" id="seekBar" min="0" max="100" value="0">
+                        <span id="duration" class="ms-2">0:00</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="d-flex align-items-center">
+                    <button class="btn btn-link text-white me-2" onclick="toggleMute()">
+                        <i id="volumeIcon" class="fas fa-volume-up"></i>
+                    </button>
+                    <input type="range" class="form-range" id="volumeControl" min="0" max="1" step="0.1" value="1">
+                </div>
+            </div>
+        </div>
+    </div>
+    <audio id="audioPlayer" preload="metadata"></audio>
+</div>
+{% endblock %} 

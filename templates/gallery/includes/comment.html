@@ -1,0 +1,127 @@
+{% load static %}
+
+<div class="comment {% if comment.parent %}ms-4{% endif %}" id="comment-{{ comment.id }}">
+    <div class="d-flex align-items-start mb-2">
+        <img src="{% if comment.user.profile.avatar %}{{ comment.user.profile.avatar.url }}{% else %}{% static 'gallery/images/default-avatar.png' %}{% endif %}" 
+             class="rounded-circle me-2" 
+             width="32" 
+             height="32" 
+             alt="{{ comment.user.username }}">
+        <div class="flex-grow-1">
+            <div class="bg-light rounded p-2">
+                <div class="d-flex justify-content-between align-items-center">
+                    <strong class="me-2">{{ comment.user.username }}</strong>
+                    <small class="text-muted">{{ comment.created_at|timesince }} ago</small>
+                </div>
+                <p class="mb-1">{{ comment.text }}</p>
+                <div class="d-flex align-items-center">
+                    <button class="btn btn-link btn-sm text-decoration-none reply-btn p-0" 
+                            data-comment-id="{{ comment.id }}"
+                            data-post-id="{{ comment.post.id }}">
+                        Reply
+                    </button>
+                    {% if comment.user == request.user %}
+                    <form action="{% url 'gallery:delete_comment' comment.pk %}" 
+                          method="post" 
+                          class="d-inline ms-2"
+                          onsubmit="return confirm('Are you sure you want to delete this comment?')">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-link btn-sm text-danger text-decoration-none p-0">
+                            Delete
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Reply form (hidden by default) -->
+            <form class="reply-form mt-2 d-none" data-parent-id="{{ comment.id }}" data-post-id="{{ comment.post.id }}">
+                {% csrf_token %}
+                <div class="input-group input-group-sm">
+                    <input type="text" class="form-control" placeholder="Write a reply...">
+                    <button class="btn btn-primary" type="submit">Reply</button>
+                    <button type="button" class="btn btn-outline-secondary cancel-reply">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Nested replies -->
+    <div class="replies" id="replies-{{ comment.id }}">
+        {% for reply in comment.replies.all %}
+            {% include 'gallery/includes/comment.html' with comment=reply %}
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Reply button click handler
+    document.querySelectorAll('.reply-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const commentId = this.dataset.commentId;
+            const comment = document.querySelector(`#comment-${commentId}`);
+            const replyForm = comment.querySelector('.reply-form');
+            
+            // Hide all other reply forms
+            document.querySelectorAll('.reply-form').forEach(form => {
+                if (form !== replyForm) {
+                    form.classList.add('d-none');
+                }
+            });
+            
+            // Toggle this reply form
+            replyForm.classList.toggle('d-none');
+            if (!replyForm.classList.contains('d-none')) {
+                replyForm.querySelector('input').focus();
+            }
+        });
+    });
+
+    // Cancel reply button click handler
+    document.querySelectorAll('.cancel-reply').forEach(button => {
+        button.addEventListener('click', function() {
+            const form = this.closest('.reply-form');
+            form.classList.add('d-none');
+            form.querySelector('input').value = '';
+        });
+    });
+
+    // Reply form submit handler
+    document.querySelectorAll('.reply-form').forEach(form => {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const postId = this.dataset.postId;
+            const parentId = this.dataset.parentId;
+            const input = this.querySelector('input');
+            const text = input.value.trim();
+            
+            if (text) {
+                fetch(`/gallery/posts/${postId}/comment/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `text=${encodeURIComponent(text)}&parent_id=${parentId}`,
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const replies = document.querySelector(`#replies-${parentId}`);
+                        replies.insertAdjacentHTML('beforeend', data.comment_html);
+                        input.value = '';
+                        this.classList.add('d-none');
+                        
+                        // Update comment count
+                        const commentCount = document.querySelector(
+                            `.comment-btn[data-post-id="${postId}"] .comment-count`
+                        );
+                        commentCount.textContent = data.comment_count;
+                    }
+                });
+            }
+        });
+    });
+});
+</script> 

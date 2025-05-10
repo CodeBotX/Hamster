@@ -1,0 +1,1066 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ song.title }} - Hamster Media{% endblock %}
+
+{% block content %}
+<div class="container py-3">
+  <div class="row justify-content-center">
+    <div class="col-12 col-md-8 col-lg-6">
+      <div class="card text-center shadow-lg p-2 retro-card d-flex flex-column align-items-center justify-content-center" style="min-height: 90vh;">
+        <div class="retro-record-player mx-auto position-relative mb-2">
+          <div class="tonearm" id="tonearm"></div>
+          <form id="coverForm" method="post" enctype="multipart/form-data" style="display: contents;">
+            {% csrf_token %}
+            <input type="file" id="coverInput" name="cover" accept="image/*" style="display:none;" onchange="this.form.submit()">
+            <div class="retro-vinyl clickable" id="vinyl" onclick="document.getElementById('coverInput').click()" title="Click để đổi ảnh bìa">
+              {% if song.cover %}
+                <img src="{{ song.cover.url }}" alt="Cover" class="retro-cover-img">
+              {% else %}
+                <img src="/static/images/default_cover.png" alt="Cover" class="retro-cover-img">
+              {% endif %}
+              <div class="retro-center-hole"></div>
+            </div>
+          </form>
+        </div>
+        <h3 class="fw-bold text-light song-title mb-1">{{ song.title }}</h3>
+        <p class="text-muted mb-2 song-artist">{{ song.artist }}</p>
+        <button id="playPauseBtn" class="btn retro-play-btn mb-2 mt-1">
+          <i class="fas fa-play fa-2x"></i>
+        </button>
+        <audio id="audioPlayer" src="{{ song.file.url }}"></audio>
+
+        <!-- EQ UI -->
+        <div class="eq-section mt-3">
+          <div class="mb-2 d-flex align-items-center justify-content-center gap-2">
+            <label class="form-label fw-bold text-light mb-0">EQ:</label>
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" id="eqToggle" checked>
+              <label class="form-check-label text-light" for="eqToggle">On</label>
+            </div>
+          </div>
+          <div class="mb-2">
+            <label for="eqPreset" class="form-label fw-bold text-light">Preset:</label>
+            <div class="param-value" data-param="eqPreset">Flat</div>
+            <select id="eqPreset" class="form-select form-select-sm w-auto d-inline-block">
+              <option value="flat">Flat</option>
+              <option value="pop">Pop</option>
+              <option value="rock">Rock</option>
+              <option value="jazz">Jazz</option>
+              <option value="classical">Classical</option>
+              <option value="bass">Bass Boost</option>
+              <option value="treble">Treble Boost</option>
+              <option value="custom">Custom</option>
+            </select>
+          </div>
+          <div class="d-flex flex-wrap justify-content-center align-items-center gap-3 eq-controls">
+            <div class="text-center">
+              <label for="bassSlider" class="form-label text-light mb-1">Bass</label>
+              <div class="param-value" data-param="bassSlider">0 dB</div>
+              <input type="range" min="-15" max="15" value="0" id="bassSlider" class="form-range eq-slider">
+            </div>
+            <div class="text-center">
+              <label for="midSlider" class="form-label text-light mb-1">Mid</label>
+              <div class="param-value" data-param="midSlider">0 dB</div>
+              <input type="range" min="-15" max="15" value="0" id="midSlider" class="form-range eq-slider">
+            </div>
+            <div class="text-center">
+              <label for="trebleSlider" class="form-label text-light mb-1">Treble</label>
+              <div class="param-value" data-param="trebleSlider">0 dB</div>
+              <input type="range" min="-15" max="15" value="0" id="trebleSlider" class="form-range eq-slider">
+            </div>
+          </div>
+        </div>
+
+        <!-- Multi-band EQ UI -->
+        <div class="eq-section mt-3">
+          <div class="mb-2 d-flex align-items-center justify-content-center gap-2">
+            <label class="form-label fw-bold text-light mb-0">Multi-band EQ:</label>
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" id="multiBandEqToggle" checked>
+              <label class="form-check-label text-light" for="multiBandEqToggle">On</label>
+            </div>
+          </div>
+          <div class="d-flex flex-wrap justify-content-center align-items-center gap-3 eq-multiband-controls">
+            <div class="text-center">
+              <label for="eq60" class="form-label text-light mb-1">60Hz</label>
+              <div class="param-value" data-param="eq60">0 dB</div>
+              <input type="range" min="-15" max="15" value="0" id="eq60" class="form-range eq-slider">
+            </div>
+            <div class="text-center">
+              <label for="eq170" class="form-label text-light mb-1">170Hz</label>
+              <div class="param-value" data-param="eq170">0 dB</div>
+              <input type="range" min="-15" max="15" value="0" id="eq170" class="form-range eq-slider">
+            </div>
+            <div class="text-center">
+              <label for="eq310" class="form-label text-light mb-1">310Hz</label>
+              <div class="param-value" data-param="eq310">0 dB</div>
+              <input type="range" min="-15" max="15" value="0" id="eq310" class="form-range eq-slider">
+            </div>
+            <div class="text-center">
+              <label for="eq600" class="form-label text-light mb-1">600Hz</label>
+              <div class="param-value" data-param="eq600">0 dB</div>
+              <input type="range" min="-15" max="15" value="0" id="eq600" class="form-range eq-slider">
+            </div>
+            <div class="text-center">
+              <label for="eq1k" class="form-label text-light mb-1">1kHz</label>
+              <div class="param-value" data-param="eq1k">0 dB</div>
+              <input type="range" min="-15" max="15" value="0" id="eq1k" class="form-range eq-slider">
+            </div>
+            <div class="text-center">
+              <label for="eq3k" class="form-label text-light mb-1">3kHz</label>
+              <div class="param-value" data-param="eq3k">0 dB</div>
+              <input type="range" min="-15" max="15" value="0" id="eq3k" class="form-range eq-slider">
+            </div>
+            <div class="text-center">
+              <label for="eq6k" class="form-label text-light mb-1">6kHz</label>
+              <div class="param-value" data-param="eq6k">0 dB</div>
+              <input type="range" min="-15" max="15" value="0" id="eq6k" class="form-range eq-slider">
+            </div>
+            <div class="text-center">
+              <label for="eq12k" class="form-label text-light mb-1">12kHz</label>
+              <div class="param-value" data-param="eq12k">0 dB</div>
+              <input type="range" min="-15" max="15" value="0" id="eq12k" class="form-range eq-slider">
+            </div>
+          </div>
+        </div>
+        <!-- Spectrum Visualizer -->
+        <div class="spectrum-container mt-3 mb-2">
+          <canvas id="spectrumCanvas" width="320" height="80" style="width:100%;max-width:350px;display:block;margin:auto;background:rgba(0,0,0,0.18);border-radius:12px;"></canvas>
+        </div>
+        <!-- Compressor UI -->
+        <div class="eq-section mt-3">
+          <div class="mb-2 d-flex align-items-center justify-content-center gap-2">
+            <label class="form-label fw-bold text-light mb-0">Compressor:</label>
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" id="compressorToggle" checked>
+              <label class="form-check-label text-light" for="compressorToggle">On</label>
+            </div>
+          </div>
+          <div class="d-flex flex-wrap justify-content-center align-items-center gap-3 compressor-controls">
+            <div class="text-center">
+              <label for="compThreshold" class="form-label text-light mb-1">Threshold</label>
+              <div class="param-value" data-param="compThreshold">-24 dB</div>
+              <input type="range" min="-100" max="0" value="-24" id="compThreshold" class="form-range eq-slider">
+            </div>
+            <div class="text-center">
+              <label for="compRatio" class="form-label text-light mb-1">Ratio</label>
+              <div class="param-value" data-param="compRatio">4:1</div>
+              <input type="range" min="1" max="20" value="4" id="compRatio" class="form-range eq-slider">
+            </div>
+            <div class="text-center">
+              <label for="compAttack" class="form-label text-light mb-1">Attack</label>
+              <div class="param-value" data-param="compAttack">0.003s</div>
+              <input type="range" min="0" max="1" step="0.01" value="0.003" id="compAttack" class="form-range eq-slider">
+            </div>
+            <div class="text-center">
+              <label for="compRelease" class="form-label text-light mb-1">Release</label>
+              <div class="param-value" data-param="compRelease">0.25s</div>
+              <input type="range" min="0" max="1" step="0.01" value="0.25" id="compRelease" class="form-range eq-slider">
+            </div>
+            <div class="text-center">
+              <label for="compKnee" class="form-label text-light mb-1">Knee</label>
+              <div class="param-value" data-param="compKnee">30°</div>
+              <input type="range" min="0" max="40" value="30" id="compKnee" class="form-range eq-slider">
+            </div>
+          </div>
+        </div>
+        <!-- Master Gain UI -->
+        <div class="eq-section mt-3">
+          <div class="mb-2 d-flex align-items-center justify-content-center gap-2">
+            <label class="form-label fw-bold text-light mb-0">Master Volume:</label>
+            <div class="param-value" data-param="masterGain">100%</div>
+            <input type="range" min="0" max="2" step="0.01" value="1" id="masterGain" class="form-range eq-slider">
+          </div>
+        </div>
+        <!-- Stereo Panning UI -->
+        <div class="eq-section mt-3">
+          <div class="mb-2 d-flex align-items-center justify-content-center gap-2">
+            <label class="form-label fw-bold text-light mb-0">Stereo Pan:</label>
+            <div class="param-value" data-param="stereoPan">0</div>
+            <input type="range" min="-1" max="1" step="0.01" value="0" id="stereoPan" class="form-range eq-slider">
+          </div>
+        </div>
+        <!-- Delay UI -->
+        <div class="eq-section mt-3">
+          <div class="mb-2 d-flex align-items-center justify-content-center gap-2">
+            <label class="form-label fw-bold text-light mb-0">Delay:</label>
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" id="delayToggle" checked>
+              <label class="form-check-label text-light" for="delayToggle">On</label>
+            </div>
+          </div>
+          <div class="d-flex flex-wrap justify-content-center align-items-center gap-3 delay-controls">
+            <div class="text-center">
+              <label for="delayTime" class="form-label text-light mb-1">Time</label>
+              <div class="param-value" data-param="delayTime">0s</div>
+              <input type="range" min="0" max="1" step="0.01" value="0" id="delayTime" class="form-range eq-slider">
+            </div>
+            <div class="text-center">
+              <label for="delayFeedback" class="form-label text-light mb-1">Feedback</label>
+              <div class="param-value" data-param="delayFeedback">0</div>
+              <input type="range" min="0" max="0.9" step="0.01" value="0" id="delayFeedback" class="form-range eq-slider">
+            </div>
+          </div>
+        </div>
+
+        <!-- Reverb UI -->
+        <div class="eq-section mt-3">
+          <div class="mb-2 d-flex align-items-center justify-content-center gap-2">
+            <label class="form-label fw-bold text-light mb-0">Reverb:</label>
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" id="reverbToggle" checked>
+              <label class="form-check-label text-light" for="reverbToggle">On</label>
+            </div>
+          </div>
+          <div class="d-flex flex-wrap justify-content-center align-items-center gap-3 reverb-controls">
+            <div class="text-center">
+              <label for="reverbRoomSize" class="form-label text-light mb-1">Room Size</label>
+              <div class="param-value" data-param="reverbRoomSize">0.5</div>
+              <input type="range" min="0" max="1" step="0.01" value="0.5" id="reverbRoomSize" class="form-range eq-slider">
+            </div>
+            <div class="text-center">
+              <label for="reverbDamping" class="form-label text-light mb-1">Damping</label>
+              <div class="param-value" data-param="reverbDamping">0.5</div>
+              <input type="range" min="0" max="1" step="0.01" value="0.5" id="reverbDamping" class="form-range eq-slider">
+            </div>
+            <div class="text-center">
+              <label for="reverbWet" class="form-label text-light mb-1">Wet</label>
+              <div class="param-value" data-param="reverbWet">0.3</div>
+              <input type="range" min="0" max="1" step="0.01" value="0.3" id="reverbWet" class="form-range eq-slider">
+            </div>
+            <div class="text-center">
+              <label for="reverbPreDelay" class="form-label text-light mb-1">Pre-delay</label>
+              <div class="param-value" data-param="reverbPreDelay">0.01s</div>
+              <input type="range" min="0" max="0.1" step="0.001" value="0.01" id="reverbPreDelay" class="form-range eq-slider">
+            </div>
+          </div>
+          <div class="mt-2">
+            <label for="reverbPreset" class="form-label fw-bold text-light">Preset:</label>
+            <select id="reverbPreset" class="form-select form-select-sm w-auto d-inline-block">
+              <option value="room">Room</option>
+              <option value="hall">Hall</option>
+              <option value="plate">Plate</option>
+              <option value="spring">Spring</option>
+              <option value="custom">Custom</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Mini Waveform Display -->
+        <div class="waveform-container mt-3 mb-2">
+          <canvas id="waveformCanvas" width="320" height="40" style="width:100%;max-width:350px;display:block;margin:auto;background:rgba(0,0,0,0.18);border-radius:12px;"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+body {
+    background: radial-gradient(circle at center, #3e2723 0%, #1b0000 100%);
+    font-family: 'Courier New', Courier, monospace;
+}
+
+.retro-card {
+    background: #4e342e;
+    border: 4px solid #3e2723;
+    border-radius: 24px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.8);
+    color: #fffde7;
+    padding: 0.5rem 0.2rem 1.2rem 0.2rem;
+    min-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.retro-record-player {
+    width: 80vw;
+    max-width: 320px;
+    height: 80vw;
+    max-height: 320px;
+    background: radial-gradient(#212121 40%, #000 100%);
+    border-radius: 20px;
+    border: 6px solid #5d4037;
+    position: relative;
+    box-shadow: inset 0 0 20px rgba(255,235,59,0.1);
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.retro-vinyl {
+    width: 70vw;
+    max-width: 260px;
+    height: 70vw;
+    max-height: 260px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 60% 40%, #111 55%, #333 100%);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.6), 0 0 0 12px #212121, 0 0 0 20px #000;
+    margin: auto;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: box-shadow 0.3s;
+}
+
+.retro-vinyl::before {
+    content: "";
+    position: absolute;
+    width: 95%;
+    height: 95%;
+    border-radius: 50%;
+    background: repeating-radial-gradient(#000, #111 2px, #222 4px);
+    z-index: 0;
+    opacity: 0.06;
+}
+
+.retro-cover-img {
+    width: 32vw;
+    max-width: 110px;
+    height: 32vw;
+    max-height: 110px;
+    border-radius: 50%;
+    border: 5px solid #ffcc80;
+    z-index: 2;
+    object-fit: cover;
+    box-shadow: 0 0 20px rgba(255, 204, 128, 0.3);
+}
+
+.retro-center-hole {
+    position: absolute;
+    width: 4vw;
+    max-width: 14px;
+    height: 4vw;
+    max-height: 14px;
+    background: #ccc;
+    border-radius: 50%;
+    border: 2px solid #666;
+    z-index: 3;
+}
+
+.tonearm {
+    position: absolute;
+    width: 30vw;
+    max-width: 100px;
+    height: 8px;
+    background: #ccc;
+    top: 14vw;
+    max-top: 60px;
+    right: -30px;
+    transform-origin: left center;
+    transform: rotate(0deg);
+    transition: transform 0.8s ease-in-out;
+    border-radius: 6px;
+    box-shadow: 2px 2px 8px rgba(0,0,0,0.5);
+    z-index: 1;
+}
+.tonearm::after {
+    content: "";
+    position: absolute;
+    right: 0;
+    top: -3px;
+    width: 12px;
+    height: 12px;
+    background: #222;
+    border: 2px solid #aaa;
+    border-radius: 50%;
+}
+
+.retro-card.playing .tonearm {
+    transform: rotate(25deg);
+}
+
+.spinning {
+    animation: spin 2.8s linear infinite;
+}
+
+@keyframes spin {
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+.retro-play-btn {
+    background: linear-gradient(145deg, #ffe082, #ffb300);
+    border: 2px solid #fff8e1;
+    color: #3e2723;
+    box-shadow: 0 6px 14px rgba(0,0,0,0.3);
+    border-radius: 50%;
+    width: 54px;
+    height: 54px;
+    font-size: 1.3rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.song-title { font-size: 1.1rem; }
+.song-artist { font-size: 0.95rem; }
+@media (min-width: 576px) {
+    .retro-record-player { width: 320px; height: 320px; }
+    .retro-vinyl { width: 260px; height: 260px; }
+    .retro-cover-img { width: 110px; height: 110px; }
+    .retro-center-hole { width: 14px; height: 14px; }
+    .tonearm { width: 100px; top: 60px; }
+    .retro-play-btn { width: 60px; height: 60px; font-size: 1.5rem; }
+    .song-title { font-size: 1.3rem; }
+    .song-artist { font-size: 1.1rem; }
+}
+@media (min-width: 768px) {
+    .song-title { font-size: 1.7rem; }
+    .song-artist { font-size: 1.2rem; }
+}
+.eq-section {
+    background: rgba(30, 20, 10, 0.7);
+    border-radius: 16px;
+    padding: 1rem 0.5rem 0.5rem 0.5rem;
+    margin-top: 1.2rem;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.12);
+    max-width: 350px;
+    margin-left: auto;
+    margin-right: auto;
+}
+.eq-sliders .form-label {
+    font-size: 0.95rem;
+    margin-bottom: 0.2rem;
+}
+.eq-slider {
+    width: 90px;
+    min-width: 70px;
+    max-width: 120px;
+}
+@media (max-width: 576px) {
+    .eq-section { padding: 0.7rem 0.2rem 0.2rem 0.2rem; }
+    .eq-slider { width: 60px; }
+}
+.eq-multiband-sliders .form-label {
+    font-size: 0.85rem;
+    margin-bottom: 0.1rem;
+}
+.eq-multiband-sliders .eq-slider {
+    width: 48px;
+    min-width: 36px;
+    max-width: 60px;
+}
+@media (max-width: 576px) {
+    .eq-multiband-sliders .eq-slider { width: 32px; }
+}
+.spectrum-container {
+    width: 100%;
+    max-width: 350px;
+    margin-left: auto;
+    margin-right: auto;
+    background: none;
+}
+#spectrumCanvas {
+    width: 100%;
+    height: 80px;
+    background: rgba(0,0,0,0.18);
+    border-radius: 12px;
+    display: block;
+}
+.compressor-sliders .form-label {
+    font-size: 0.85rem;
+    margin-bottom: 0.1rem;
+}
+.compressor-sliders .eq-slider {
+    width: 60px;
+    min-width: 40px;
+    max-width: 80px;
+}
+.compressor-sliders .small { font-size: 0.85em; }
+#masterGain { width: 160px; max-width: 90vw; display: inline-block; vertical-align: middle; }
+#masterGainVal { min-width: 40px; display: inline-block; }
+#stereoPan, #delayTime, #delayFeedback { width: 120px; max-width: 90vw; display: inline-block; vertical-align: middle; }
+#stereoPanVal, #delayTimeVal, #delayFeedbackVal { min-width: 32px; display: inline-block; }
+
+/* VST-like UI Styles */
+.eq-section {
+  background: linear-gradient(to bottom, rgba(30, 20, 10, 0.8), rgba(20, 10, 5, 0.9));
+  border: 1px solid rgba(255, 204, 128, 0.2);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+.eq-slider {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 4px;
+  border-radius: 2px;
+  background: linear-gradient(to right, #ffcc80, #ffb300);
+  outline: none;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+}
+
+.eq-slider:hover {
+  opacity: 1;
+}
+
+.eq-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #ffb300;
+  cursor: pointer;
+  box-shadow: 0 0 4px rgba(0,0,0,0.5);
+}
+
+.eq-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #ffb300;
+  cursor: pointer;
+  box-shadow: 0 0 4px rgba(0,0,0,0.5);
+}
+
+.form-select {
+  background-color: rgba(30, 20, 10, 0.8);
+  color: #ffcc80;
+  border: 1px solid rgba(255, 204, 128, 0.3);
+}
+
+.form-select:focus {
+  background-color: rgba(40, 30, 20, 0.9);
+  color: #ffcc80;
+  border-color: rgba(255, 204, 128, 0.5);
+  box-shadow: 0 0 0 0.25rem rgba(255, 204, 128, 0.25);
+}
+
+.form-check-input:checked {
+  background-color: #ffb300;
+  border-color: #ffb300;
+}
+
+.waveform-container {
+  position: relative;
+  overflow: hidden;
+}
+
+#waveformCanvas {
+  border: 1px solid rgba(255, 204, 128, 0.2);
+}
+
+/* Parameter Value Display */
+.param-value {
+  background: rgba(0, 0, 0, 0.3);
+  color: #ffcc80;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 1px solid rgba(255, 204, 128, 0.2);
+  min-width: 60px;
+  display: inline-block;
+}
+
+.param-value:hover {
+  background: rgba(0, 0, 0, 0.5);
+  border-color: rgba(255, 204, 128, 0.4);
+}
+
+.param-value.active {
+  background: rgba(255, 204, 128, 0.2);
+  border-color: #ffcc80;
+}
+
+/* Slider Styles */
+.eq-slider {
+  width: 120px;
+  height: 4px;
+  -webkit-appearance: none;
+  background: linear-gradient(to right, #ffcc80, #ffb300);
+  border-radius: 2px;
+  outline: none;
+  opacity: 0.7;
+  transition: all 0.3s ease;
+  margin: 0 auto;
+}
+
+.eq-slider:hover {
+  opacity: 1;
+}
+
+.eq-slider.active {
+  width: 200px;
+  opacity: 1;
+}
+
+.eq-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #ffb300;
+  cursor: pointer;
+  box-shadow: 0 0 4px rgba(0,0,0,0.5);
+  transition: all 0.2s;
+}
+
+.eq-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+}
+
+.eq-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #ffb300;
+  cursor: pointer;
+  box-shadow: 0 0 4px rgba(0,0,0,0.5);
+  transition: all 0.2s;
+}
+
+.eq-slider::-moz-range-thumb:hover {
+  transform: scale(1.2);
+}
+
+/* Control Sections */
+.eq-controls, .eq-multiband-controls, .delay-controls, .reverb-controls {
+  padding: 0.5rem;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 576px) {
+  .eq-slider {
+    width: 100px;
+  }
+  
+  .eq-slider.active {
+    width: 160px;
+  }
+  
+  .param-value {
+    font-size: 0.8rem;
+    padding: 3px 6px;
+    min-width: 50px;
+  }
+}
+</style>
+
+<script>
+const audio = document.getElementById('audioPlayer');
+const playPauseBtn = document.getElementById('playPauseBtn');
+const playPauseIcon = playPauseBtn.querySelector('i');
+const vinyl = document.getElementById('vinyl');
+const tonearm = document.getElementById('tonearm');
+const card = document.querySelector('.retro-card');
+
+// Audio Nodes
+let audioCtx, sourceNode;
+let bassFilter, midFilter, trebleFilter;
+let eqFilters = [];
+let compressorNode;
+let masterGainNode;
+let stereoPannerNode;
+let delayNode, delayFeedbackNode;
+let analyser;
+let spectrumAnimationId;
+let reverbNode, reverbGainNode;
+let audioChainInitialized = false;
+
+const eqBands = [
+  { freq: 60,   id: 'eq60' },
+  { freq: 170,  id: 'eq170' },
+  { freq: 310,  id: 'eq310' },
+  { freq: 600,  id: 'eq600' },
+  { freq: 1000, id: 'eq1k' },
+  { freq: 3000, id: 'eq3k' },
+  { freq: 6000, id: 'eq6k' },
+  { freq: 12000, id: 'eq12k' }
+];
+
+// Mapping for compressor and other parameters
+const paramConfig = {
+  bassSlider:   { unit: ' dB' },
+  midSlider:    { unit: ' dB' },
+  trebleSlider: { unit: ' dB' },
+  eq60:   { unit: ' dB' },
+  eq170:  { unit: ' dB' },
+  eq310:  { unit: ' dB' },
+  eq600:  { unit: ' dB' },
+  eq1k:   { unit: ' dB' },
+  eq3k:   { unit: ' dB' },
+  eq6k:   { unit: ' dB' },
+  eq12k:  { unit: ' dB' },
+  compThreshold: { unit: ' dB', node: 'compressorNode', prop: 'threshold' },
+  compRatio:     { unit: ':1',  node: 'compressorNode', prop: 'ratio' },
+  compAttack:    { unit: 's',   node: 'compressorNode', prop: 'attack' },
+  compRelease:   { unit: 's',   node: 'compressorNode', prop: 'release' },
+  compKnee:      { unit: '°',   node: 'compressorNode', prop: 'knee' },
+  masterGain:    { unit: '%',   node: 'masterGainNode', prop: 'gain', percent: true },
+  stereoPan:     { unit: '',    node: 'stereoPannerNode', prop: 'pan' },
+  delayTime:     { unit: 's',   node: 'delayNode', prop: 'delayTime' },
+  delayFeedback: { unit: '',    node: 'delayFeedbackNode', prop: 'gain' },
+  reverbRoomSize: { unit: '',   node: null },
+  reverbDamping:  { unit: '',   node: null },
+  reverbWet:      { unit: '',   node: null },
+  reverbPreDelay: { unit: 's',  node: null },
+};
+
+function setupAllAudioNodes() {
+  if (!window.AudioContext) return;
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (!sourceNode) sourceNode = audioCtx.createMediaElementSource(audio);
+
+  // Multi-band EQ
+  if (!eqFilters.length) {
+    eqFilters = eqBands.map(band => {
+      const f = audioCtx.createBiquadFilter();
+      f.type = 'peaking';
+      f.frequency.value = band.freq;
+      f.Q.value = 1.1;
+      f.gain.value = document.getElementById(band.id).value;
+      return f;
+    });
+  }
+  // 3-band EQ
+  if (!bassFilter) {
+    bassFilter = audioCtx.createBiquadFilter();
+    bassFilter.type = 'lowshelf';
+    bassFilter.frequency.value = 100;
+    bassFilter.gain.value = document.getElementById('bassSlider').value;
+  }
+  if (!midFilter) {
+    midFilter = audioCtx.createBiquadFilter();
+    midFilter.type = 'peaking';
+    midFilter.frequency.value = 1000;
+    midFilter.gain.value = document.getElementById('midSlider').value;
+  }
+  if (!trebleFilter) {
+    trebleFilter = audioCtx.createBiquadFilter();
+    trebleFilter.type = 'highshelf';
+    trebleFilter.frequency.value = 8000;
+    trebleFilter.gain.value = document.getElementById('trebleSlider').value;
+  }
+  // Compressor
+  if (!compressorNode) {
+    compressorNode = audioCtx.createDynamicsCompressor();
+    compressorNode.threshold.value = +compThreshold.value;
+    compressorNode.ratio.value = +compRatio.value;
+    compressorNode.attack.value = +compAttack.value;
+    compressorNode.release.value = +compRelease.value;
+    compressorNode.knee.value = +compKnee.value;
+  }
+  // Delay
+  if (!delayNode) {
+    delayNode = audioCtx.createDelay(5.0);
+    delayNode.delayTime.value = +delayTime.value;
+    delayFeedbackNode = audioCtx.createGain();
+    delayFeedbackNode.gain.value = +delayFeedback.value;
+    delayNode.connect(delayFeedbackNode);
+    delayFeedbackNode.connect(delayNode);
+  }
+  // Stereo Panner
+  if (!stereoPannerNode) {
+    stereoPannerNode = audioCtx.createStereoPanner();
+    stereoPannerNode.pan.value = +stereoPan.value;
+  }
+  // Master Gain
+  if (!masterGainNode) {
+    masterGainNode = audioCtx.createGain();
+    masterGainNode.gain.value = +masterGain.value;
+  }
+  // Analyser
+  if (!analyser) {
+    analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 128;
+  }
+  audioChainInitialized = true;
+  connectAudioChain();
+}
+
+function connectAudioChain() {
+  // Disconnect all nodes first
+  try {
+    sourceNode.disconnect();
+    eqFilters.forEach(f => f.disconnect());
+    bassFilter.disconnect();
+    midFilter.disconnect();
+    trebleFilter.disconnect();
+    compressorNode.disconnect();
+    delayNode.disconnect();
+    delayFeedbackNode.disconnect();
+    stereoPannerNode.disconnect();
+    masterGainNode.disconnect();
+    analyser.disconnect();
+  } catch (e) {}
+
+  let node = sourceNode;
+  // Multi-band EQ
+  if (document.getElementById('multiBandEqToggle').checked) {
+    eqFilters.forEach(f => { node.connect(f); node = f; });
+  }
+  // 3-band EQ
+  if (document.getElementById('eqToggle').checked) {
+    node.connect(bassFilter); node = bassFilter;
+    node.connect(midFilter); node = midFilter;
+    node.connect(trebleFilter); node = trebleFilter;
+  }
+  // Compressor
+  if (document.getElementById('compressorToggle').checked) {
+    node.connect(compressorNode); node = compressorNode;
+  }
+  // Delay
+  if (document.getElementById('delayToggle').checked) {
+    node.connect(delayNode); node = delayNode;
+  }
+  // Stereo Panner
+  node.connect(stereoPannerNode); node = stereoPannerNode;
+  // Master Gain
+  node.connect(masterGainNode); node = masterGainNode;
+  // Analyser
+  node.connect(analyser); node = analyser;
+  // Output
+  analyser.connect(audioCtx.destination);
+}
+
+// --- Play/Pause logic ---
+playPauseBtn.addEventListener('click', () => {
+    if (audio.paused) {
+        if (!audioChainInitialized) setupAllAudioNodes();
+        audio.play();
+    } else {
+        audio.pause();
+    }
+});
+
+audio.addEventListener('play', () => {
+    playPauseIcon.className = 'fas fa-pause fa-2x';
+    vinyl.classList.add('spinning');
+    card.classList.add('playing');
+    if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+    if (!audioChainInitialized) setupAllAudioNodes();
+    if (spectrumAnimationId) cancelAnimationFrame(spectrumAnimationId);
+    drawSpectrum();
+    drawWaveform();
+});
+
+audio.addEventListener('pause', () => {
+    playPauseIcon.className = 'fas fa-play fa-2x';
+    vinyl.classList.remove('spinning');
+    card.classList.remove('playing');
+    if (spectrumAnimationId) cancelAnimationFrame(spectrumAnimationId);
+});
+
+audio.addEventListener('ended', () => {
+    playPauseIcon.className = 'fas fa-play fa-2x';
+    vinyl.classList.remove('spinning');
+    card.classList.remove('playing');
+    if (spectrumAnimationId) cancelAnimationFrame(spectrumAnimationId);
+});
+
+// --- Slider events: only update gain/property, do not recreate nodes ---
+const eqPreset = document.getElementById('eqPreset');
+const bassSlider = document.getElementById('bassSlider');
+const midSlider = document.getElementById('midSlider');
+const trebleSlider = document.getElementById('trebleSlider');
+
+eqPreset.addEventListener('change', function() {
+  const preset = eqPreset.value;
+  updateSlidersFromPreset(preset);
+  setEQ(+bassSlider.value, +midSlider.value, +trebleSlider.value);
+  // Update param-value display for preset
+  updateParamValue('eqPreset', preset.charAt(0).toUpperCase() + preset.slice(1));
+});
+
+function setEQ(bass, mid, treble) {
+  if (bassFilter) bassFilter.gain.value = bass;
+  if (midFilter) midFilter.gain.value = mid;
+  if (trebleFilter) trebleFilter.gain.value = treble;
+  console.log('EQ changed:', {bass, mid, treble});
+}
+
+function updateSlidersFromPreset(preset) {
+  bassSlider.value = eqPresets[preset].bass;
+  midSlider.value = eqPresets[preset].mid;
+  trebleSlider.value = eqPresets[preset].treble;
+  setEQ(+bassSlider.value, +midSlider.value, +trebleSlider.value);
+  // Update param-value display for all 3-band EQ
+  updateParamValue('bassSlider', bassSlider.value, paramConfig['bassSlider'].unit);
+  updateParamValue('midSlider', midSlider.value, paramConfig['midSlider'].unit);
+  updateParamValue('trebleSlider', trebleSlider.value, paramConfig['trebleSlider'].unit);
+}
+
+function updateParamValue(id, value, unit = null) {
+  const paramDisplay = document.querySelector(`.param-value[data-param="${id}"]`);
+  if (paramDisplay) {
+    if (unit !== null) {
+      paramDisplay.textContent = value + unit;
+    } else if (paramConfig[id] && paramConfig[id].unit) {
+      if (paramConfig[id].unit === '%') {
+        paramDisplay.textContent = Math.round(value * 100) + '%';
+      } else {
+        paramDisplay.textContent = value + paramConfig[id].unit;
+      }
+    } else {
+      paramDisplay.textContent = value;
+    }
+  }
+}
+
+[bassSlider, midSlider, trebleSlider].forEach(slider => {
+  slider.addEventListener('input', function() {
+    setEQ(+bassSlider.value, +midSlider.value, +trebleSlider.value);
+    eqPreset.value = 'custom';
+    updateParamValue(slider.id, this.value, paramConfig[slider.id].unit);
+    console.log(slider.id + ' changed:', this.value);
+  });
+});
+
+eqBands.forEach((band, i) => {
+  const slider = document.getElementById(band.id);
+  slider.addEventListener('input', function() {
+    if (eqFilters[i]) eqFilters[i].gain.value = +this.value;
+    updateParamValue(band.id, this.value, paramConfig[band.id].unit);
+    console.log(band.id + ' changed:', this.value);
+  });
+});
+
+// --- Toggle switches ---
+document.getElementById('multiBandEqToggle').addEventListener('change', function() {
+  if (audioChainInitialized) connectAudioChain();
+  console.log('Multi-band EQ toggled:', this.checked);
+});
+document.getElementById('eqToggle').addEventListener('change', function() {
+  if (audioChainInitialized) connectAudioChain();
+  console.log('3-band EQ toggled:', this.checked);
+});
+document.getElementById('compressorToggle').addEventListener('change', function() {
+  if (audioChainInitialized) connectAudioChain();
+  console.log('Compressor toggled:', this.checked);
+});
+document.getElementById('delayToggle').addEventListener('change', function() {
+  if (audioChainInitialized) connectAudioChain();
+  console.log('Delay toggled:', this.checked);
+});
+document.getElementById('reverbToggle').addEventListener('change', function() {
+  if (audioChainInitialized) connectAudioChain();
+  console.log('Reverb toggled:', this.checked);
+});
+
+// --- Compressor sliders ---
+['compThreshold', 'compRatio', 'compAttack', 'compRelease', 'compKnee'].forEach(id => {
+  document.getElementById(id).addEventListener('input', function() {
+    let value = this.value;
+    const conf = paramConfig[id];
+    if (conf && conf.node && window[conf.node]) {
+      if (conf.prop === 'gain' && conf.percent) {
+        window[conf.node][conf.prop].value = +value;
+      } else if (conf.prop === 'gain') {
+        window[conf.node][conf.prop].value = +value;
+      } else if (conf.prop === 'delayTime') {
+        window[conf.node][conf.prop].value = +value;
+      } else {
+        window[conf.node][conf.prop].value = +value;
+      }
+    }
+    updateParamValue(id, value, conf.unit);
+    console.log(id + ' changed:', value);
+  });
+});
+
+document.getElementById('masterGain').addEventListener('input', function() {
+  const value = this.value;
+  updateParamValue('masterGain', Math.round(value * 100), '%');
+  if (masterGainNode) masterGainNode.gain.value = +value;
+  console.log('masterGain changed:', value);
+});
+
+document.getElementById('stereoPan').addEventListener('input', function() {
+  const value = this.value;
+  updateParamValue('stereoPan', value, '');
+  if (stereoPannerNode) stereoPannerNode.pan.value = +value;
+  console.log('stereoPan changed:', value);
+});
+
+document.getElementById('delayTime').addEventListener('input', function() {
+  if (delayNode) delayNode.delayTime.value = +this.value;
+  updateParamValue('delayTime', this.value, 's');
+  console.log('delayTime changed:', this.value);
+});
+document.getElementById('delayFeedback').addEventListener('input', function() {
+  if (delayFeedbackNode) delayFeedbackNode.gain.value = +this.value;
+  updateParamValue('delayFeedback', this.value, '');
+  console.log('delayFeedback changed:', this.value);
+});
+
+// Reverb sliders
+['reverbRoomSize', 'reverbDamping', 'reverbWet'].forEach(id => {
+  document.getElementById(id).addEventListener('input', function() {
+    updateParamValue(id, this.value, paramConfig[id].unit);
+  });
+});
+document.getElementById('reverbPreDelay').addEventListener('input', function() {
+  updateParamValue('reverbPreDelay', this.value, 's');
+});
+
+// --- Spectrum Visualizer ---
+const spectrumCanvas = document.getElementById('spectrumCanvas');
+const spectrumCtx = spectrumCanvas.getContext('2d');
+
+function drawSpectrum() {
+  if (!analyser) return;
+  const bufferLength = analyser.frequencyBinCount;
+  const dataArray = new Uint8Array(bufferLength);
+  analyser.getByteFrequencyData(dataArray);
+  spectrumCtx.clearRect(0, 0, spectrumCanvas.width, spectrumCanvas.height);
+  const barWidth = spectrumCanvas.width / bufferLength;
+  for (let i = 0; i < bufferLength; i++) {
+    const value = dataArray[i];
+    const percent = value / 255;
+    const barHeight = percent * spectrumCanvas.height;
+    const hue = 200 + percent * 120;
+    spectrumCtx.fillStyle = `hsl(${hue}, 80%, 60%)`;
+    spectrumCtx.fillRect(i * barWidth, spectrumCanvas.height - barHeight, barWidth - 1, barHeight);
+  }
+  spectrumAnimationId = requestAnimationFrame(drawSpectrum);
+}
+
+// --- Waveform Display ---
+const waveformCanvas = document.getElementById('waveformCanvas');
+const waveformCtx = waveformCanvas.getContext('2d');
+let waveformData = new Float32Array(0);
+
+function drawWaveform() {
+  if (!analyser) return;
+  const bufferLength = analyser.frequencyBinCount;
+  const dataArray = new Float32Array(bufferLength);
+  analyser.getFloatTimeDomainData(dataArray);
+  
+  waveformCtx.clearRect(0, 0, waveformCanvas.width, waveformCanvas.height);
+  waveformCtx.lineWidth = 2;
+  waveformCtx.strokeStyle = '#ffcc80';
+  waveformCtx.beginPath();
+  
+  const sliceWidth = waveformCanvas.width / bufferLength;
+  let x = 0;
+  
+  for (let i = 0; i < bufferLength; i++) {
+    const v = dataArray[i];
+    const y = (v * waveformCanvas.height / 2) + waveformCanvas.height / 2;
+    
+    if (i === 0) {
+      waveformCtx.moveTo(x, y);
+    } else {
+      waveformCtx.lineTo(x, y);
+    }
+    
+    x += sliceWidth;
+  }
+  
+  waveformCtx.lineTo(waveformCanvas.width, waveformCanvas.height / 2);
+  waveformCtx.stroke();
+  
+  requestAnimationFrame(drawWaveform);
+}
+</script>
+{% endblock %} 

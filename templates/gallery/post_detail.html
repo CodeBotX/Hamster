@@ -1,0 +1,386 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ post.title }} - Hamster Media{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <!-- Back to Album -->
+            <div class="mb-4">
+                <a href="{% url 'gallery:album_detail' album.pk %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left"></i> Back to Album
+                </a>
+            </div>
+
+            <!-- Post Card -->
+            <div class="card">
+                <div class="card-body">
+                    <!-- Post Header -->
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div>
+                            <h4 class="card-title mb-1">{{ post.title }}</h4>
+                            <small class="text-muted">
+                                Posted by {{ post.user.username }} in 
+                                <a href="{% url 'gallery:album_detail' album.pk %}">{{ album.name }}</a>
+                                {{ post.created_at|timesince }} ago
+                            </small>
+                        </div>
+                        {% if post.user == request.user %}
+                        <div class="dropdown">
+                            <button class="btn btn-link text-muted p-0" data-bs-toggle="dropdown">
+                                <i class="fas fa-ellipsis-h"></i>
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li>
+                                    <a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#reorderModal{{ post.id }}">
+                                        <i class="fas fa-sort"></i> Reorder Photos
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item text-danger" href="{% url 'gallery:delete_post' post.pk %}">
+                                        <i class="fas fa-trash"></i> Delete Post
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Post Description -->
+                    {% if post.description %}
+                    <p class="card-text mb-3">{{ post.description }}</p>
+                    {% endif %}
+
+                    <!-- Photos Grid -->
+                    <div class="photo-grid">
+                        {% for photo in post.photos.all %}
+                        <div class="photo-item position-relative">
+                            <img src="{{ photo.image.url }}" alt="{{ post.title }}" class="img-fluid" 
+                                 data-bs-toggle="modal" data-bs-target="#photoModal{{ photo.id }}">
+                            {% if post.user == request.user %}
+                            <a href="{% url 'gallery:delete_photo' photo.pk %}" class="btn btn-danger btn-sm position-absolute top-0 end-0 m-2">
+                                <i class="fas fa-times"></i>
+                            </a>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <!-- Post Interactions -->
+                    <div class="post-interactions mt-3">
+                        <!-- Like and Comment Buttons -->
+                        <div class="d-flex align-items-center mb-3">
+                            <button class="btn btn-link text-decoration-none p-0 like-btn {% if request.user in post.likes.all %}active{% endif %}" 
+                                    data-post-id="{{ post.id }}">
+                                <i class="far fa-heart"></i> 
+                                <span class="like-count">{{ post.likes.count }}</span>
+                            </button>
+                            <button class="btn btn-link text-decoration-none p-0 comment-toggle-btn ms-3" 
+                                    data-post-id="{{ post.id }}"
+                                    onclick="toggleComments({{ post.id }})">
+                                <i class="far fa-comment"></i>
+                                <span class="comment-count">{{ post.comments.count }}</span>
+                            </button>
+                        </div>
+
+                        <!-- Comments Section -->
+                        <div class="comments-section" id="comments-{{ post.id }}">
+                            <div class="comments-list mb-3">
+                                {% for comment in post.comments.all %}
+                                <div class="comment mb-2">
+                                    <div class="d-flex">
+                                        <div class="flex-grow-1">
+                                            <div class="bg-light rounded p-2">
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <strong class="me-2">{{ comment.user.username }}</strong>
+                                                    <div>
+                                                        <small class="text-muted me-2">{{ comment.created_at|timesince }} ago</small>
+                                                        {% if comment.user == request.user %}
+                                                        <a href="{% url 'gallery:delete_comment' comment.pk %}" class="text-danger">
+                                                            <i class="fas fa-trash"></i>
+                                                        </a>
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                                <p class="mb-0 text-break">{{ comment.text }}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            
+                            <form class="comment-form" data-post-id="{{ post.id }}">
+                                {% csrf_token %}
+                                <div class="input-group">
+                                    <input type="text" class="form-control" name="text" placeholder="Write a comment...">
+                                    <button class="btn btn-primary" type="submit">Post</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Photo Modals -->
+{% for photo in post.photos.all %}
+<div class="modal fade" id="photoModal{{ photo.id }}" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-body p-0">
+                <img src="{{ photo.image.url }}" class="img-fluid w-100" alt="{{ post.title }}">
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+<style>
+.card {
+    border: none;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+    transition: all 0.3s cubic-bezier(.25,.8,.25,1);
+}
+
+.card:hover {
+    box-shadow: 0 3px 6px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.23);
+}
+
+.photo-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    margin: 0 -8px;
+}
+
+.photo-item {
+    position: relative;
+    aspect-ratio: 1;
+    overflow: hidden;
+    border-radius: 8px;
+}
+
+.photo-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.photo-item:hover img {
+    transform: scale(1.05);
+}
+
+.post-interactions .btn-link {
+    color: #65676b;
+    transition: color 0.2s;
+}
+
+.post-interactions .btn-link:hover {
+    color: #1a73e8;
+}
+
+.post-interactions .btn-link.active {
+    color: #e0245e;
+}
+
+.comment {
+    padding: 2px 0;
+}
+
+.comment .bg-light {
+    background-color: #f0f2f5 !important;
+    max-width: 100%;
+    word-wrap: break-word;
+    padding: 4px 8px !important;
+}
+
+.comment strong {
+    font-size: 0.8rem;
+    color: #050505;
+}
+
+.comment p {
+    font-size: 0.8rem;
+    color: #050505;
+    line-height: 1.2;
+    margin-top: 2px;
+    margin-bottom: 0;
+}
+
+.comment small {
+    font-size: 0.7rem;
+    color: #65676b;
+}
+
+.comment-form .form-control {
+    border-radius: 20px;
+    background-color: #f0f2f5;
+    border: none;
+    font-size: 0.8rem;
+    padding: 6px 10px;
+    height: 32px;
+}
+
+.comment-form .btn {
+    border-radius: 20px;
+    margin-left: 6px;
+    padding: 4px 10px;
+    font-size: 0.8rem;
+    height: 32px;
+}
+</style>
+
+{% block extra_js %}
+<script>
+function toggleComments(postId) {
+    const commentsSection = document.getElementById(`comments-${postId}`);
+    const commentButton = document.querySelector(`[data-post-id="${postId}"].comment-toggle-btn`);
+    
+    if (commentsSection.style.display === 'none') {
+        commentsSection.style.display = 'block';
+        commentButton.querySelector('i').classList.replace('far', 'fas');
+    } else {
+        commentsSection.style.display = 'none';
+        commentButton.querySelector('i').classList.replace('fas', 'far');
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Get CSRF token
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    const csrftoken = getCookie('csrftoken');
+
+    // Like button functionality
+    document.querySelectorAll('.like-btn').forEach(button => {
+        let isProcessing = false;
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            if (isProcessing) return;
+            isProcessing = true;
+
+            const postId = this.dataset.postId;
+            const url = `/posts/${postId}/like/`;
+            const formData = new FormData();
+            
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrftoken
+                },
+                credentials: 'same-origin',
+                body: formData
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.liked) {
+                    this.classList.add('active');
+                    this.querySelector('i').classList.replace('far', 'fas');
+                } else {
+                    this.classList.remove('active');
+                    this.querySelector('i').classList.replace('fas', 'far');
+                }
+                this.querySelector('.like-count').textContent = data.like_count;
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while processing your like. Please try again.');
+            })
+            .finally(() => {
+                isProcessing = false;
+            });
+        });
+    });
+
+    // Comment form submission
+    document.querySelectorAll('.comment-form').forEach(form => {
+        let isProcessing = false;
+        
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            if (isProcessing) return;
+            isProcessing = true;
+
+            const postId = this.dataset.postId;
+            const input = this.querySelector('input[name="text"]');
+            const comment = input.value.trim();
+            
+            if (comment) {
+                const url = `/posts/${postId}/comment/`;
+                const formData = new FormData();
+                formData.append('text', comment);
+                
+                fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': csrftoken
+                    },
+                    credentials: 'same-origin',
+                    body: formData
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        const commentsList = this.previousElementSibling;
+                        const newComment = document.createElement('div');
+                        newComment.className = 'comment mb-2';
+                        newComment.innerHTML = `
+                            <div class="d-flex">
+                                <div class="flex-grow-1">
+                                    <div class="bg-light rounded p-2">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <strong class="me-2">${data.user}</strong>
+                                            <small class="text-muted">just now</small>
+                                        </div>
+                                        <p class="mb-0 text-break">${comment}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        commentsList.appendChild(newComment);
+                        input.value = '';
+                        document.querySelector(`[data-post-id="${postId}"] .comment-count`).textContent = data.comment_count;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred while posting the comment. Please try again.');
+                })
+                .finally(() => {
+                    isProcessing = false;
+                });
+            }
+        });
+    });
+});
+</script>
+{% endblock %}
+{% endblock %} 

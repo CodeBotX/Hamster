@@ -1,0 +1,518 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ album.name }} - Hamster Media{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <!-- Album Header -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h4 class="card-title mb-1">{{ album.name }}</h4>
+                            <p class="text-muted mb-0">{{ album.get_post_count }} posts</p>
+                        </div>
+                        <div>
+                            {% if album.user == request.user %}
+                            <a href="{% url 'gallery:create_post' album.pk %}" class="btn btn-primary me-2">
+                                <i class="fas fa-plus"></i> Add Photos
+                            </a>
+                            <a href="{% url 'gallery:delete_album' album.pk %}" class="btn btn-danger">
+                                <i class="fas fa-trash"></i> Delete Album
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% if album.description %}
+                    <p class="card-text mt-3">{{ album.description }}</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Posts -->
+            {% for post in posts %}
+            <div class="card mb-4">
+                <div class="card-body">
+                    <!-- Post Header -->
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div>
+                            <h5 class="mb-0">{{ post.title }}</h5>
+                            <small class="text-muted">
+                                Posted by {{ post.user.username }} {{ post.created_at|timesince }} ago
+                            </small>
+                        </div>
+                        {% if post.user == request.user %}
+                        <div class="dropdown">
+                            <button class="btn btn-link text-muted p-0" data-bs-toggle="dropdown">
+                                <i class="fas fa-ellipsis-h"></i>
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li>
+                                    <a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#reorderModal{{ post.id }}">
+                                        <i class="fas fa-sort"></i> Reorder Photos
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item text-danger" href="{% url 'gallery:delete_post' post.pk %}">
+                                        <i class="fas fa-trash"></i> Delete Post
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Post Description -->
+                    {% if post.description %}
+                    <p class="card-text mb-3">{{ post.description }}</p>
+                    {% endif %}
+
+                    <!-- Photos Grid -->
+                    <div class="photo-grid">
+                        {% for photo in post.photos.all %}
+                        <div class="photo-item position-relative">
+                            <img src="{{ photo.image.url }}" alt="{{ post.title }}" class="img-fluid" 
+                                 data-bs-toggle="modal" data-bs-target="#photoModal{{ photo.id }}">
+                            {% if post.user == request.user %}
+                            <a href="{% url 'gallery:delete_photo' photo.pk %}" class="btn btn-danger btn-sm position-absolute top-0 end-0 m-2">
+                                <i class="fas fa-times"></i>
+                            </a>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <!-- Post Interactions -->
+                    <div class="post-interactions mt-3">
+                        <!-- Like and Comment Buttons -->
+                        <div class="d-flex align-items-center mb-3">
+                            <button class="btn btn-link text-decoration-none p-0 like-btn {% if request.user in post.likes.all %}active{% endif %}" 
+                                    data-post-id="{{ post.id }}">
+                                <i class="far fa-heart"></i> 
+                                <span class="like-count">{{ post.likes.count }}</span>
+                            </button>
+                            <button class="btn btn-link text-decoration-none p-0 comment-toggle-btn ms-3" 
+                                    data-post-id="{{ post.id }}"
+                                    onclick="toggleComments({{ post.id }})">
+                                <i class="far fa-comment"></i>
+                                <span class="comment-count">{{ post.comments.count }}</span>
+                            </button>
+                        </div>
+
+                        <!-- Comments Section (Hidden by default) -->
+                        <div class="comments-section" id="comments-{{ post.id }}" style="display: none;">
+                            <div class="comments-list mb-3">
+                                {% for comment in post.comments.all|slice:":5" %}
+                                <div class="comment mb-2">
+                                    <div class="d-flex">
+                                        <div class="flex-grow-1">
+                                            <div class="bg-light rounded p-2">
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <strong class="me-2">{{ comment.user.username }}</strong>
+                                                    <div>
+                                                        <small class="text-muted me-2">{{ comment.created_at|timesince }} ago</small>
+                                                        {% if comment.user == request.user %}
+                                                        <a href="{% url 'gallery:delete_comment' comment.pk %}" class="text-danger">
+                                                            <i class="fas fa-trash"></i>
+                                                        </a>
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                                <p class="mb-0 text-break">{{ comment.text }}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                                
+                                <!-- Hidden comments for latest/all views -->
+                                <div class="hidden-comments d-none">
+                                    {% for comment in post.comments.all %}
+                                    <div class="comment mb-2">
+                                        <div class="d-flex">
+                                            <div class="flex-grow-1">
+                                                <div class="bg-light rounded p-2">
+                                                    <div class="d-flex justify-content-between align-items-center">
+                                                        <strong class="me-2">{{ comment.user.username }}</strong>
+                                                        <div>
+                                                            <small class="text-muted me-2">{{ comment.created_at|timesince }} ago</small>
+                                                            {% if comment.user == request.user %}
+                                                            <a href="{% url 'gallery:delete_comment' comment.pk %}" class="text-danger">
+                                                                <i class="fas fa-trash"></i>
+                                                            </a>
+                                                            {% endif %}
+                                                        </div>
+                                                    </div>
+                                                    <p class="mb-0 text-break">{{ comment.text }}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                
+                                {% if post.comments.count > 5 %}
+                                <div class="show-more-comments text-center">
+                                    <button class="btn btn-link text-primary" data-post-id="{{ post.id }}">
+                                        Show more comments ({{ post.comments.count|add:"-5" }} more)
+                                    </button>
+                                </div>
+                                {% endif %}
+                            </div>
+                            
+                            <form class="comment-form" data-post-id="{{ post.id }}">
+                                {% csrf_token %}
+                                <div class="input-group">
+                                    <input type="text" class="form-control" name="text" placeholder="Write a comment...">
+                                    <button class="btn btn-primary" type="submit">Post</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Photo Modal -->
+            {% for photo in post.photos.all %}
+            <div class="modal fade" id="photoModal{{ photo.id }}" tabindex="-1">
+                <div class="modal-dialog modal-dialog-centered modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-body p-0">
+                            <img src="{{ photo.image.url }}" class="img-fluid w-100" alt="{{ post.title }}">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+            {% empty %}
+            <div class="alert alert-info">
+                No posts in this album yet. 
+                {% if album.user == request.user %}
+                <a href="{% url 'gallery:create_post' album.pk %}">Create your first post</a>!
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    border: none;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+    transition: all 0.3s cubic-bezier(.25,.8,.25,1);
+}
+
+.card:hover {
+    box-shadow: 0 3px 6px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.23);
+}
+
+.photo-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    margin: 0 -8px;
+}
+
+.photo-item {
+    position: relative;
+    aspect-ratio: 1;
+    overflow: hidden;
+    border-radius: 8px;
+}
+
+.photo-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.photo-item:hover img {
+    transform: scale(1.05);
+}
+
+.post-interactions .btn-link {
+    color: #65676b;
+    transition: color 0.2s;
+}
+
+.post-interactions .btn-link:hover {
+    color: #1a73e8;
+}
+
+.post-interactions .btn-link.active {
+    color: #e0245e;
+}
+
+.post-interactions .like-btn {
+    color: #65676b;
+    transition: color 0.2s;
+}
+
+.post-interactions .like-btn:hover {
+    color: #e0245e;
+}
+
+.post-interactions .like-btn.active {
+    color: #e0245e;
+}
+
+.post-interactions .like-btn i {
+    font-size: 1.2rem;
+    margin-right: 5px;
+}
+
+.post-interactions .like-count {
+    font-size: 0.9rem;
+}
+
+.comment-toggle-btn {
+    color: #65676b;
+    transition: color 0.2s;
+    cursor: pointer;
+}
+
+.comment-toggle-btn:hover {
+    color: #1a73e8;
+}
+
+.comment-toggle-btn i {
+    font-size: 1.2rem;
+    margin-right: 5px;
+}
+
+.comment-toggle-btn .comment-count {
+    font-size: 0.9rem;
+}
+
+.comments-section {
+    border-top: 1px solid #e4e6eb;
+    padding-top: 6px;
+    margin-top: 6px;
+    transition: all 0.3s ease;
+}
+
+.comments-header {
+    margin-bottom: 6px;
+}
+
+.comments-header h6 {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #65676b;
+}
+
+.comment-view-options .btn {
+    font-size: 0.75rem;
+    padding: 2px 6px;
+    margin-left: 4px;
+}
+
+.comment-view-options .btn.active {
+    background-color: #1a73e8;
+    color: white;
+    border-color: #1a73e8;
+}
+
+.show-more-comments {
+    margin: 6px 0;
+}
+
+.show-more-comments .btn-link {
+    font-size: 0.8rem;
+    color: #65676b;
+}
+
+.show-more-comments .btn-link:hover {
+    text-decoration: underline;
+    color: #1a73e8;
+}
+
+.hidden-comments {
+    display: none;
+}
+
+.hidden-comments.show {
+    display: block;
+}
+</style>
+
+{% block extra_js %}
+<script>
+function toggleComments(postId) {
+    const commentsSection = document.getElementById(`comments-${postId}`);
+    const commentButton = document.querySelector(`[data-post-id="${postId}"].comment-toggle-btn`);
+    
+    if (commentsSection.style.display === 'none') {
+        commentsSection.style.display = 'block';
+        commentButton.querySelector('i').classList.replace('far', 'fas');
+    } else {
+        commentsSection.style.display = 'none';
+        commentButton.querySelector('i').classList.replace('fas', 'far');
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Get CSRF token
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    const csrftoken = getCookie('csrftoken');
+
+    // Like button functionality
+    document.querySelectorAll('.like-btn').forEach(button => {
+        let isProcessing = false;
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            if (isProcessing) return;
+            isProcessing = true;
+
+            const postId = this.dataset.postId;
+            const url = `/posts/${postId}/like/`;
+            const formData = new FormData();
+            
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrftoken
+                },
+                credentials: 'same-origin',
+                body: formData
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.liked) {
+                    this.classList.add('active');
+                    this.querySelector('i').classList.replace('far', 'fas');
+                } else {
+                    this.classList.remove('active');
+                    this.querySelector('i').classList.replace('fas', 'far');
+                }
+                this.querySelector('.like-count').textContent = data.like_count;
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while processing your like. Please try again.');
+            })
+            .finally(() => {
+                isProcessing = false;
+            });
+        });
+    });
+
+    // Comment form submission
+    document.querySelectorAll('.comment-form').forEach(form => {
+        let isProcessing = false;
+        
+        // Remove any existing event listeners
+        const newForm = form.cloneNode(true);
+        form.parentNode.replaceChild(newForm, form);
+        
+        newForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            if (isProcessing) return;
+            isProcessing = true;
+
+            const postId = this.dataset.postId;
+            const input = this.querySelector('input[name="text"]');
+            const comment = input.value.trim();
+            
+            if (comment) {
+                const url = `/posts/${postId}/comment/`;
+                const formData = new FormData();
+                formData.append('text', comment);
+                
+                fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': csrftoken
+                    },
+                    credentials: 'same-origin',
+                    body: formData
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        // Add new comment to both lists
+                        const commentsList = this.previousElementSibling;
+                        const visibleComments = commentsList.querySelector('.comment:not(.hidden-comments .comment)');
+                        const hiddenComments = commentsList.querySelector('.hidden-comments');
+                        
+                        const newComment = document.createElement('div');
+                        newComment.className = 'comment mb-2';
+                        newComment.innerHTML = `
+                            <div class="d-flex">
+                                <div class="flex-grow-1">
+                                    <div class="bg-light rounded p-2">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <strong class="me-2">${data.user}</strong>
+                                            <small class="text-muted">just now</small>
+                                        </div>
+                                        <p class="mb-0 text-break">${comment}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        
+                        // Add to visible comments
+                        if (visibleComments) {
+                            visibleComments.parentNode.insertBefore(newComment, visibleComments);
+                        } else {
+                            commentsList.insertBefore(newComment, hiddenComments);
+                        }
+                        
+                        // Add to hidden comments
+                        const hiddenComment = newComment.cloneNode(true);
+                        hiddenComments.insertBefore(hiddenComment, hiddenComments.firstChild);
+                        
+                        // Update show more button if exists
+                        const showMoreButton = commentsList.querySelector('.show-more-comments');
+                        if (showMoreButton) {
+                            const countText = showMoreButton.querySelector('button');
+                            const currentCount = parseInt(countText.textContent.match(/\d+/)[0]);
+                            countText.textContent = `Show more comments (${currentCount + 1} more)`;
+                        }
+                        
+                        // Clear input
+                        input.value = '';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred while posting the comment. Please try again.');
+                })
+                .finally(() => {
+                    isProcessing = false;
+                });
+            }
+        });
+    });
+});
+</script>
+{% endblock %}
+{% endblock %} 

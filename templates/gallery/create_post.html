@@ -1,0 +1,187 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Create Post - Hamster Media{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card">
+                <div class="card-body">
+                    <h4 class="card-title mb-4">Create New Post in {{ album.name }}</h4>
+                    
+                    <form method="post" enctype="multipart/form-data" id="postForm">
+                        {% csrf_token %}
+                        
+                        <!-- Post Form -->
+                        <div class="mb-3">
+                            <label for="{{ post_form.title.id_for_label }}" class="form-label">Title</label>
+                            {{ post_form.title }}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ post_form.description.id_for_label }}" class="form-label">Description</label>
+                            {{ post_form.description }}
+                        </div>
+                        
+                        <!-- Photo Upload -->
+                        <div class="mb-3">
+                            <label for="{{ photo_form.image.id_for_label }}" class="form-label">Photos</label>
+                            {{ photo_form.image }}
+                            <div class="form-text">You can select multiple photos</div>
+                        </div>
+                        
+                        <!-- Preview Button -->
+                        <button type="button" class="btn btn-outline-primary mb-3" onclick="previewPost()">
+                            <i class="fas fa-eye"></i> Preview Post
+                        </button>
+                        
+                        <!-- Submit Button -->
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Create Post
+                        </button>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Preview Modal -->
+            <div class="modal fade" id="previewModal" tabindex="-1">
+                <div class="modal-dialog modal-dialog-centered modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Post Preview</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="card">
+                                <div class="card-body">
+                                    <!-- Preview Header -->
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <div>
+                                            <h4 class="card-title mb-1" id="previewTitle"></h4>
+                                            <small class="text-muted">
+                                                Posted by {{ request.user.username }} in {{ album.name }}
+                                            </small>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Preview Description -->
+                                    <p class="card-text mb-3" id="previewDescription"></p>
+                                    
+                                    <!-- Preview Photos -->
+                                    <div class="photo-grid" id="previewPhotos"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    border: none;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+}
+
+.form-control {
+    border-radius: 8px;
+}
+
+.form-control:focus {
+    box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+}
+
+.btn {
+    border-radius: 8px;
+    padding: 8px 16px;
+}
+
+.btn-primary {
+    background-color: #1a73e8;
+    border-color: #1a73e8;
+}
+
+.btn-primary:hover {
+    background-color: #1557b0;
+    border-color: #1557b0;
+}
+
+.btn-secondary {
+    background-color: #f0f2f5;
+    border-color: #f0f2f5;
+    color: #65676b;
+}
+
+.btn-secondary:hover {
+    background-color: #e4e6eb;
+    border-color: #e4e6eb;
+    color: #050505;
+}
+
+.photo-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    margin: 0 -8px;
+}
+
+.photo-item {
+    position: relative;
+    aspect-ratio: 1;
+    overflow: hidden;
+    border-radius: 8px;
+}
+
+.photo-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+#previewPhotos {
+    min-height: 200px;
+}
+</style>
+
+{% block extra_js %}
+<script>
+function previewPost() {
+    // Get form values
+    const title = document.getElementById('{{ post_form.title.id_for_label }}').value;
+    const description = document.getElementById('{{ post_form.description.id_for_label }}').value;
+    const photos = document.getElementById('{{ photo_form.image.id_for_label }}').files;
+    
+    // Update preview
+    document.getElementById('previewTitle').textContent = title || 'Untitled Post';
+    document.getElementById('previewDescription').textContent = description || '';
+    
+    // Clear previous photos
+    const previewPhotos = document.getElementById('previewPhotos');
+    previewPhotos.innerHTML = '';
+    
+    // Add new photos
+    if (photos.length > 0) {
+        for (let i = 0; i < photos.length; i++) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const photoItem = document.createElement('div');
+                photoItem.className = 'photo-item';
+                photoItem.innerHTML = `<img src="${e.target.result}" class="img-fluid">`;
+                previewPhotos.appendChild(photoItem);
+            }
+            reader.readAsDataURL(photos[i]);
+        }
+    } else {
+        previewPhotos.innerHTML = '<div class="text-center text-muted">No photos selected</div>';
+    }
+    
+    // Show modal
+    new bootstrap.Modal(document.getElementById('previewModal')).show();
+}
+</script>
+{% endblock %}
+{% endblock %} 

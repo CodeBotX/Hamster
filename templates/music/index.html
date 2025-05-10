@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+
+{% block title %}Music - Hamster Media{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>My Music Library</h2>
+                <a href="{% url 'music:create_playlist' %}" class="btn btn-primary">
+                    <i class="fas fa-folder-plus"></i> New Folder
+                </a>
+            </div>
+
+            <div class="row">
+                {% for playlist in playlists %}
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100">
+                        {% if playlist.cover_image %}
+                            <img src="{{ playlist.cover_image.url }}" class="card-img-top" alt="{{ playlist.name }}" style="height: 200px; object-fit: cover;">
+                        {% else %}
+                            <div class="card-img-top bg-secondary d-flex align-items-center justify-content-center" style="height: 200px;">
+                                <i class="fas fa-folder fa-3x text-white"></i>
+                            </div>
+                        {% endif %}
+                        <div class="card-body">
+                            <h5 class="card-title">{{ playlist.name }}</h5>
+                            <p class="card-text">{{ playlist.description|truncatechars:100 }}</p>
+                            <div class="d-flex justify-content-between">
+                                <a href="{% url 'music:playlist_detail' playlist.pk %}" class="btn btn-outline-primary">
+                                    <i class="fas fa-folder-open"></i> Open
+                                </a>
+                                <div class="btn-group">
+                                    <a href="{% url 'music:playlist_update' playlist.pk %}" class="btn btn-outline-secondary">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="{% url 'music:playlist_delete' playlist.pk %}" class="btn btn-outline-danger">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="col-12">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> No folders found. Create your first folder to start organizing your music.
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 
